@@ -28,6 +28,12 @@ export default async function NewProjectPage({
     .select('id, email, name')
     .order('email')
 
+  // Get supabase projects
+  const { data: supabaseProjects } = await supabase
+    .from('supabase_projects')
+    .select('id, name, ref')
+    .order('name')
+
   async function createProject(formData: FormData) {
     'use server'
 
@@ -38,6 +44,7 @@ export default async function NewProjectPage({
     const description = formData.get('description') as string
     const clientId = formData.get('client_id') as string
     const chromeProfileId = formData.get('chrome_profile_id') as string
+    const supabaseProjectId = formData.get('supabase_project_id') as string
     const folderPath = formData.get('folder_path') as string
     const githubRepo = formData.get('github_repo') as string
     const productionUrl = formData.get('production_url') as string
@@ -52,6 +59,7 @@ export default async function NewProjectPage({
         status: 'active',
         client_id: clientId || null,
         chrome_profile_id: chromeProfileId || null,
+        supabase_project_id: supabaseProjectId || null,
         folder_path: folderPath || null,
         github_repo: githubRepo || null,
         production_url: productionUrl || null,
@@ -164,6 +172,22 @@ export default async function NewProjectPage({
                 {chromeProfiles?.map((profile) => (
                   <option key={profile.id} value={profile.id}>
                     {profile.name || profile.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="supabase_project_id">Proyecto Supabase</Label>
+              <select
+                id="supabase_project_id"
+                name="supabase_project_id"
+                className="mt-1 w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white"
+              >
+                <option value="">Sin Supabase</option>
+                {supabaseProjects?.map((sp) => (
+                  <option key={sp.id} value={sp.id}>
+                    {sp.name} ({sp.ref})
                   </option>
                 ))}
               </select>
