@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 const columns = [
-  { id: 'pending', label: 'Inbox', color: 'bg-zinc-500' },
+  { id: 'inbox', label: 'Inbox', color: 'bg-zinc-500' },
   { id: 'planning', label: 'Planning', color: 'bg-blue-500' },
-  { id: 'pending_approval', label: 'Aprobacion', color: 'bg-purple-500' },
+  { id: 'approved', label: 'Aprobado', color: 'bg-purple-500' },
   { id: 'queued', label: 'En Cola', color: 'bg-yellow-500' },
   { id: 'in_progress', label: 'En Progreso', color: 'bg-orange-500' },
-  { id: 'testing', label: 'Testing', color: 'bg-cyan-500' },
-  { id: 'pending_deploy', label: 'Deploy', color: 'bg-pink-500' },
+  { id: 'review', label: 'Review', color: 'bg-cyan-500' },
+  { id: 'deployed', label: 'Deployed', color: 'bg-pink-500' },
   { id: 'completed', label: 'Completado', color: 'bg-green-500' }
 ]
 

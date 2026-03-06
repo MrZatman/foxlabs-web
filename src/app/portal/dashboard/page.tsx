@@ -54,9 +54,9 @@ export default async function DashboardPage() {
     .limit(5)
 
   // Count requests by status
-  const pendingCount = requests?.filter(r => ['pending', 'planning', 'approved'].includes(r.status)).length || 0
-  const inProgressCount = requests?.filter(r => r.status === 'in_progress').length || 0
-  const completedCount = requests?.filter(r => r.status === 'completed').length || 0
+  const pendingCount = requests?.filter(r => ['inbox', 'planning', 'approved', 'queued'].includes(r.status)).length || 0
+  const inProgressCount = requests?.filter(r => ['in_progress', 'review'].includes(r.status)).length || 0
+  const completedCount = requests?.filter(r => ['deployed', 'completed'].includes(r.status)).length || 0
 
   return (
     <PortalLayout user={user}>
@@ -237,13 +237,14 @@ function StatCard({
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { class: string; label: string }> = {
-    pending: { class: 'bg-yellow-500/20 text-yellow-400', label: 'Pendiente' },
+    inbox: { class: 'bg-zinc-500/20 text-zinc-400', label: 'Recibido' },
     planning: { class: 'bg-blue-500/20 text-blue-400', label: 'Planificando' },
     approved: { class: 'bg-purple-500/20 text-purple-400', label: 'Aprobado' },
+    queued: { class: 'bg-yellow-500/20 text-yellow-400', label: 'En Cola' },
     in_progress: { class: 'bg-orange-500/20 text-orange-400', label: 'En Progreso' },
-    preview_ready: { class: 'bg-cyan-500/20 text-cyan-400', label: 'Preview Listo' },
-    completed: { class: 'bg-green-500/20 text-green-400', label: 'Completado' },
-    failed: { class: 'bg-red-500/20 text-red-400', label: 'Error' }
+    review: { class: 'bg-cyan-500/20 text-cyan-400', label: 'En Revision' },
+    deployed: { class: 'bg-pink-500/20 text-pink-400', label: 'Desplegado' },
+    completed: { class: 'bg-green-500/20 text-green-400', label: 'Completado' }
   }
 
   const variant = variants[status] || { class: 'bg-zinc-700', label: status }
