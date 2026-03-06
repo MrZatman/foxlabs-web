@@ -10,7 +10,8 @@ import {
   Chrome,
   ListTodo,
   Rocket,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -114,8 +115,7 @@ export default async function ProjectDetailPage({
       client_id: formData.get('client_id') as string || null,
       chrome_profile_id: formData.get('chrome_profile_id') as string || null,
       supabase_project_id: formData.get('supabase_project_id') as string || null,
-      github_url: formData.get('github_url') as string || null,
-      vercel_url: formData.get('vercel_url') as string || null,
+      github_repo: formData.get('github_repo') as string || null,
       production_url: formData.get('production_url') as string || null,
       folder_path: formData.get('folder_path') as string || null,
       framework: formData.get('framework') as string || null,
@@ -129,6 +129,28 @@ export default async function ProjectDetailPage({
       .eq('id', project.id)
 
     redirect(`/admin/projects/${updates.slug || project.id}`)
+  }
+
+  async function deleteProject() {
+    'use server'
+
+    const supabase = await createClient()
+
+    // Log activity before delete
+    await supabase.from('activity_log').insert({
+      type: 'project',
+      resource_type: 'project',
+      resource_id: project.id,
+      message: `Proyecto eliminado: ${project.name}`,
+      actor: 'admin'
+    })
+
+    await supabase
+      .from('projects')
+      .delete()
+      .eq('id', project.id)
+
+    redirect('/admin/projects')
   }
 
   return (
@@ -147,8 +169,8 @@ export default async function ProjectDetailPage({
           {project.status}
         </Badge>
         <div className="flex gap-2">
-          {project.github_url && (
-            <a href={project.github_url} target="_blank" rel="noopener noreferrer">
+          {project.github_repo && (
+            <a href={`https://github.com/${project.github_repo}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="icon">
                 <Github size={18} />
               </Button>
@@ -241,31 +263,24 @@ export default async function ProjectDetailPage({
                   />
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="github_url">GitHub URL</Label>
+                    <Label htmlFor="github_repo">GitHub Repo</Label>
                     <Input
-                      id="github_url"
-                      name="github_url"
-                      defaultValue={project.github_url || ''}
+                      id="github_repo"
+                      name="github_repo"
+                      defaultValue={project.github_repo || ''}
+                      placeholder="MrZatman/mi-proyecto"
                       className="mt-1 bg-zinc-800 border-zinc-700"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="vercel_url">Vercel URL</Label>
-                    <Input
-                      id="vercel_url"
-                      name="vercel_url"
-                      defaultValue={project.vercel_url || ''}
-                      className="mt-1 bg-zinc-800 border-zinc-700"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="production_url">Produccion URL</Label>
+                    <Label htmlFor="production_url">URL Produccion</Label>
                     <Input
                       id="production_url"
                       name="production_url"
                       defaultValue={project.production_url || ''}
+                      placeholder="https://mi-proyecto.vercel.app"
                       className="mt-1 bg-zinc-800 border-zinc-700"
                     />
                   </div>
@@ -307,7 +322,13 @@ export default async function ProjectDetailPage({
                 <input type="hidden" name="chrome_profile_id" value={(project.chrome_profiles as { id: string } | null)?.id || ''} />
                 <input type="hidden" name="supabase_project_id" value={(project.supabase_projects as { id: string } | null)?.id || ''} />
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <form action={deleteProject}>
+                    <Button type="submit" variant="destructive">
+                      <Trash2 size={16} className="mr-2" />
+                      Eliminar proyecto
+                    </Button>
+                  </form>
                   <Button type="submit" className="bg-orange-500 hover:bg-orange-600">
                     <Save size={16} className="mr-2" />
                     Guardar cambios

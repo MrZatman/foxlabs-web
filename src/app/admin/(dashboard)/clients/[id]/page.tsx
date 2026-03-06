@@ -362,9 +362,9 @@ export default async function ClientDetailPage({
                         </Link>
 
                         <div className="flex items-center gap-2">
-                          {project.github_url && (
+                          {project.github_repo && (
                             <a
-                              href={project.github_url}
+                              href={`https://github.com/${project.github_repo}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-2 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-white"

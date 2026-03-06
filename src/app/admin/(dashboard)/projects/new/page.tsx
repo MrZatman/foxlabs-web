@@ -39,6 +39,8 @@ export default async function NewProjectPage({
     const clientId = formData.get('client_id') as string
     const chromeProfileId = formData.get('chrome_profile_id') as string
     const folderPath = formData.get('folder_path') as string
+    const githubRepo = formData.get('github_repo') as string
+    const productionUrl = formData.get('production_url') as string
     const framework = formData.get('framework') as string
 
     const { data: project, error } = await supabase
@@ -47,10 +49,12 @@ export default async function NewProjectPage({
         name,
         slug,
         description: description || null,
-        status: 'planning',
+        status: 'active',
         client_id: clientId || null,
         chrome_profile_id: chromeProfileId || null,
         folder_path: folderPath || null,
+        github_repo: githubRepo || null,
+        production_url: productionUrl || null,
         framework: framework || null
       })
       .select()
@@ -171,6 +175,26 @@ export default async function NewProjectPage({
                 id="folder_path"
                 name="folder_path"
                 placeholder="D:/FoxlabsProjects/mi-proyecto"
+                className="mt-1 bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="github_repo">GitHub Repo</Label>
+              <Input
+                id="github_repo"
+                name="github_repo"
+                placeholder="MrZatman/mi-proyecto"
+                className="mt-1 bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="production_url">URL Produccion</Label>
+              <Input
+                id="production_url"
+                name="production_url"
+                placeholder="https://mi-proyecto.vercel.app"
                 className="mt-1 bg-zinc-800 border-zinc-700"
               />
             </div>
