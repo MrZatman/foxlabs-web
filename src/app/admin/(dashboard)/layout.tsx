@@ -15,6 +15,7 @@ import {
   Layers,
   BarChart3,
   Activity,
+  Monitor,
   Settings,
   LogOut,
   Bell,
@@ -38,6 +39,7 @@ const navItems = [
   { href: '/admin/supabase', icon: Database, label: 'Supabase' },
   { href: '/admin/recursos', icon: Layers, label: 'Recursos' },
   { href: '/admin/metrics', icon: BarChart3, label: 'Metricas' },
+  { href: '/admin/monitor', icon: Monitor, label: 'Monitor' },
   { href: '/admin/activity', icon: Activity, label: 'Activity Log' },
   { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ]
