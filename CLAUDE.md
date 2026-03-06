@@ -6,12 +6,17 @@ Landing, cotizador, portal clientes y admin dashboard.
 
 ## Sistema Dual
 
-foxlabs-web (Vercel) + foxorchestrator (Electron) comparten Supabase.
+| Proyecto | Donde corre | Deploy |
+|----------|-------------|--------|
+| **foxlabs-web** (este) | Vercel | SI - push a GitHub |
+| **foxorchestrator** | PC local (Electron) | NO - nunca se sube |
+
+Ambos comparten Supabase.
 
 | Componente | Repo | Responsabilidad |
 |------------|------|-----------------|
 | **Este repo** | foxlabs-web | UI publica y admin |
-| **Backend** | foxorchestrator | Claude Code, Telegram, Deploy |
+| **Backend** | foxorchestrator | Claude Code, Telegram (LOCAL) |
 
 ## Stack
 
