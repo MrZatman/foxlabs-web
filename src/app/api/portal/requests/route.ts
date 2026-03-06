@@ -60,8 +60,7 @@ export async function POST(request: Request) {
         priority: data.priority || 'medium',
         title: data.title,
         description: data.description,
-        status: 'pending',
-        source: 'portal'
+        created_via: 'portal'
       })
       .select('request_number')
       .single()
