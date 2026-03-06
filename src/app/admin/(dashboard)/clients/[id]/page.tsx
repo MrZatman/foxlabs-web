@@ -7,7 +7,10 @@ import {
   FolderKanban,
   ListTodo,
   KeyRound,
-  ExternalLink
+  ExternalLink,
+  Github,
+  Plus,
+  X
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,12 +39,19 @@ export default async function ClientDetailPage({
     notFound()
   }
 
-  // Get projects
+  // Get assigned projects
   const { data: projects } = await supabase
     .from('projects')
     .select('*')
     .eq('client_id', id)
     .order('created_at', { ascending: false })
+
+  // Get unassigned projects (for dropdown)
+  const { data: unassignedProjects } = await supabase
+    .from('projects')
+    .select('id, name, slug')
+    .is('client_id', null)
+    .order('name')
 
   // Get requests
   const { data: requests } = await supabase
@@ -75,6 +85,60 @@ export default async function ClientDetailPage({
     redirect(`/admin/clients/${id}`)
   }
 
+  async function assignProject(formData: FormData) {
+    'use server'
+
+    const supabase = await createClient()
+    const projectId = formData.get('project_id') as string
+
+    if (!projectId) return
+
+    await supabase
+      .from('projects')
+      .update({
+        client_id: id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId)
+
+    // Log activity
+    await supabase.from('activity_log').insert({
+      type: 'project',
+      resource_type: 'project',
+      resource_id: projectId,
+      message: `Proyecto asignado a cliente: ${client.name}`,
+      actor: 'admin'
+    })
+
+    redirect(`/admin/clients/${id}`)
+  }
+
+  async function unassignProject(formData: FormData) {
+    'use server'
+
+    const supabase = await createClient()
+    const projectId = formData.get('project_id') as string
+
+    await supabase
+      .from('projects')
+      .update({
+        client_id: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId)
+
+    // Log activity
+    await supabase.from('activity_log').insert({
+      type: 'project',
+      resource_type: 'project',
+      resource_id: projectId,
+      message: `Proyecto desasignado de cliente: ${client.name}`,
+      actor: 'admin'
+    })
+
+    redirect(`/admin/clients/${id}`)
+  }
+
   async function togglePortal(formData: FormData) {
     'use server'
 
@@ -97,10 +161,6 @@ export default async function ClientDetailPage({
 
     const supabase = await createClient()
     const newPassword = Math.random().toString(36).slice(-8) + 'A1!'
-
-    // Update password in Supabase Auth
-    // This would require admin API access
-    // For now just notify via Telegram
 
     const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN
     const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID
@@ -232,50 +292,118 @@ export default async function ClientDetailPage({
         </TabsContent>
 
         <TabsContent value="projects">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Proyectos</CardTitle>
-              <Link href={`/admin/projects/new?client=${id}`}>
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
-                  Nuevo Proyecto
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {!projects || projects.length === 0 ? (
-                <p className="text-zinc-500 text-center py-8">Sin proyectos</p>
-              ) : (
-                <div className="space-y-3">
-                  {projects.map((project) => (
-                    <Link
-                      key={project.id}
-                      href={`/admin/projects/${project.slug || project.id}`}
-                      className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800"
+          <div className="space-y-4">
+            {/* Assign existing project */}
+            {unassignedProjects && unassignedProjects.length > 0 && (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-base">Asignar proyecto existente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form action={assignProject} className="flex gap-2">
+                    <select
+                      name="project_id"
+                      className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white"
+                      required
                     >
-                      <div className="flex items-center gap-3">
-                        <FolderKanban size={20} className="text-orange-500" />
-                        <div>
-                          <div className="font-medium">{project.name}</div>
-                          <div className="text-sm text-zinc-500">{project.status}</div>
+                      <option value="">Seleccionar proyecto...</option>
+                      {unassignedProjects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                      <Plus size={16} className="mr-2" />
+                      Asignar
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Projects list */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Proyectos Asignados</CardTitle>
+                <Link href={`/admin/projects/new?client=${id}`}>
+                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                    <Plus size={16} className="mr-2" />
+                    Nuevo Proyecto
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {!projects || projects.length === 0 ? (
+                  <p className="text-zinc-500 text-center py-8">Sin proyectos asignados</p>
+                ) : (
+                  <div className="space-y-3">
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50"
+                      >
+                        <Link
+                          href={`/admin/projects/${project.slug || project.id}`}
+                          className="flex items-center gap-3 flex-1 hover:opacity-80"
+                        >
+                          <FolderKanban size={20} className="text-orange-500" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{project.name}</div>
+                            <div className="flex items-center gap-3 text-sm text-zinc-500">
+                              <Badge variant="secondary" className="text-xs">
+                                {project.status}
+                              </Badge>
+                              {project.framework && (
+                                <span>{project.framework}</span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+
+                        <div className="flex items-center gap-2">
+                          {project.github_url && (
+                            <a
+                              href={project.github_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-white"
+                              title="GitHub"
+                            >
+                              <Github size={16} />
+                            </a>
+                          )}
+                          {project.production_url && (
+                            <a
+                              href={project.production_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-white"
+                              title="Produccion"
+                            >
+                              <ExternalLink size={16} />
+                            </a>
+                          )}
+                          <form action={unassignProject}>
+                            <input type="hidden" name="project_id" value={project.id} />
+                            <Button
+                              type="submit"
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              title="Desasignar"
+                            >
+                              <X size={16} />
+                            </Button>
+                          </form>
                         </div>
                       </div>
-                      {project.production_url && (
-                        <a
-                          href={project.production_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-zinc-400 hover:text-white"
-                        >
-                          <ExternalLink size={16} />
-                        </a>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="requests">
