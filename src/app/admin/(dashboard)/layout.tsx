@@ -1,6 +1,9 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { Toaster } from 'sonner'
+import { ToastHandler } from '@/components/admin/toast-handler'
 import {
   LayoutDashboard,
   Users,
@@ -9,6 +12,7 @@ import {
   ListTodo,
   Chrome,
   Database,
+  Layers,
   BarChart3,
   Activity,
   Settings,
@@ -32,6 +36,7 @@ const navItems = [
   { href: '/admin/requests', icon: ListTodo, label: 'Requests' },
   { href: '/admin/chrome', icon: Chrome, label: 'Chrome Profiles' },
   { href: '/admin/supabase', icon: Database, label: 'Supabase' },
+  { href: '/admin/recursos', icon: Layers, label: 'Recursos' },
   { href: '/admin/metrics', icon: BarChart3, label: 'Metricas' },
   { href: '/admin/activity', icon: Activity, label: 'Activity Log' },
   { href: '/admin/settings', icon: Settings, label: 'Settings' },
@@ -158,6 +163,20 @@ export default async function AdminLayout({
           {children}
         </main>
       </div>
+      <Suspense fallback={null}>
+        <ToastHandler />
+      </Suspense>
+      <Toaster
+        position="top-right"
+        richColors
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: '#18181b',
+            border: '1px solid #27272a',
+          }
+        }}
+      />
     </div>
   )
 }

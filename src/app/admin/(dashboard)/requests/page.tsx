@@ -1,21 +1,23 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { List, LayoutGrid, Search, Filter } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { KanbanBoard } from './kanban-board'
 
 const columns = [
   { id: 'inbox', label: 'Inbox', color: 'bg-zinc-500' },
-  { id: 'planning', label: 'Planning', color: 'bg-blue-500' },
+  { id: 'planning', label: 'Planificando', color: 'bg-blue-500' },
+  { id: 'pending_approval', label: 'Esperando Aprobacion', color: 'bg-yellow-500' },
   { id: 'approved', label: 'Aprobado', color: 'bg-purple-500' },
-  { id: 'queued', label: 'En Cola', color: 'bg-yellow-500' },
-  { id: 'in_progress', label: 'En Progreso', color: 'bg-orange-500' },
-  { id: 'review', label: 'Review', color: 'bg-cyan-500' },
-  { id: 'deployed', label: 'Deployed', color: 'bg-pink-500' },
-  { id: 'completed', label: 'Completado', color: 'bg-green-500' }
+  { id: 'queued', label: 'En Cola', color: 'bg-indigo-500' },
+  { id: 'in_progress', label: 'Ejecutando', color: 'bg-orange-500' },
+  { id: 'pending_review', label: 'En Review', color: 'bg-cyan-500' },
+  { id: 'pending_deploy', label: 'Desplegando', color: 'bg-pink-500' },
+  { id: 'completed', label: 'Completado', color: 'bg-green-500' },
+  { id: 'cancelled', label: 'Cancelado', color: 'bg-red-500' },
 ]
 
 const priorityColors: Record<string, string> = {
@@ -57,12 +59,6 @@ export default async function RequestsPage({
     .from('projects')
     .select('id, name')
     .order('name')
-
-  // Group by status for kanban
-  const requestsByStatus: Record<string, typeof requests> = {}
-  columns.forEach(col => {
-    requestsByStatus[col.id] = requests?.filter(r => r.status === col.id) || []
-  })
 
   return (
     <div className="space-y-6">
@@ -120,55 +116,11 @@ export default async function RequestsPage({
       </Card>
 
       {view === 'kanban' ? (
-        /* Kanban View */
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
-            {columns.map((column) => (
-              <div key={column.id} className="w-72 flex-shrink-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={`w-3 h-3 rounded-full ${column.color}`} />
-                  <span className="font-medium">{column.label}</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {requestsByStatus[column.id]?.length || 0}
-                  </Badge>
-                </div>
-                <ScrollArea className="h-[calc(100vh-300px)]">
-                  <div className="space-y-3 pr-2">
-                    {requestsByStatus[column.id]?.map((request) => (
-                      <Link key={request.id} href={`/admin/requests/${request.id}`}>
-                        <Card className={`bg-zinc-900 border-zinc-800 border-l-4 ${priorityColors[request.priority] || 'border-l-zinc-500'} hover:bg-zinc-800 cursor-pointer`}>
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="text-sm text-zinc-500">#{request.request_number}</div>
-                                <div className="font-medium truncate">{request.title}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {(request.projects as { name: string } | null)?.name || 'Sin proyecto'}
-                              </Badge>
-                              {request.estimated_hours && (
-                                <span className="text-xs text-zinc-500">
-                                  {request.estimated_hours}h
-                                </span>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                    {(!requestsByStatus[column.id] || requestsByStatus[column.id]!.length === 0) && (
-                      <div className="p-4 text-center text-zinc-500 text-sm">
-                        Sin requests
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            ))}
-          </div>
-        </div>
+        <KanbanBoard
+          initialRequests={requests || []}
+          columns={columns}
+          priorityColors={priorityColors}
+        />
       ) : (
         /* List View */
         <Card className="bg-zinc-900 border-zinc-800">

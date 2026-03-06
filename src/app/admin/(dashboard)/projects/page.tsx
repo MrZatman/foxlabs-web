@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, Search, Eye, Github, ExternalLink, RefreshCw } from 'lucide-react'
+import { Plus, Search, Eye, Github, ExternalLink, FolderSync } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -64,9 +64,9 @@ export default async function ProjectsPage({
           <p className="text-zinc-400">Gestiona todos los proyectos</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/settings">
+          <Link href="/admin/projects/import">
             <Button variant="outline">
-              <RefreshCw size={16} className="mr-2" />
+              <FolderSync size={16} className="mr-2" />
               Importar
             </Button>
           </Link>

@@ -214,6 +214,7 @@ function getStatusConfig(status: string) {
     planning: { class: 'bg-blue-500/20 text-blue-400', label: 'Planificando' },
     approved: { class: 'bg-purple-500/20 text-purple-400', label: 'Aprobado' },
     in_progress: { class: 'bg-orange-500/20 text-orange-400', label: 'En Progreso' },
+    deploying: { class: 'bg-cyan-500/20 text-cyan-400 animate-pulse', label: 'Publicando...' },
     preview_ready: { class: 'bg-cyan-500/20 text-cyan-400', label: 'Preview Listo' },
     completed: { class: 'bg-green-500/20 text-green-400', label: 'Completado' },
     failed: { class: 'bg-red-500/20 text-red-400', label: 'Error' }

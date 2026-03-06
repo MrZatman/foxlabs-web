@@ -55,7 +55,7 @@ export default async function DashboardPage() {
 
   // Count requests by status
   const pendingCount = requests?.filter(r => ['inbox', 'planning', 'approved', 'queued'].includes(r.status)).length || 0
-  const inProgressCount = requests?.filter(r => ['in_progress', 'review'].includes(r.status)).length || 0
+  const inProgressCount = requests?.filter(r => ['in_progress', 'deploying', 'review'].includes(r.status)).length || 0
   const completedCount = requests?.filter(r => ['deployed', 'completed'].includes(r.status)).length || 0
 
   return (
@@ -242,6 +242,7 @@ function StatusBadge({ status }: { status: string }) {
     approved: { class: 'bg-purple-500/20 text-purple-400', label: 'Aprobado' },
     queued: { class: 'bg-yellow-500/20 text-yellow-400', label: 'En Cola' },
     in_progress: { class: 'bg-orange-500/20 text-orange-400', label: 'En Progreso' },
+    deploying: { class: 'bg-cyan-500/20 text-cyan-400 animate-pulse', label: 'Publicando...' },
     review: { class: 'bg-cyan-500/20 text-cyan-400', label: 'En Revision' },
     deployed: { class: 'bg-pink-500/20 text-pink-400', label: 'Desplegado' },
     completed: { class: 'bg-green-500/20 text-green-400', label: 'Completado' }

@@ -43,7 +43,7 @@ export default async function ProjectDetailPage({
       *,
       clients(id, name),
       chrome_profiles(id, email, name),
-      supabase_projects(id, name, ref)
+      supabase_projects(id, name, supabase_ref)
     `)
 
   // Check if slug is UUID
@@ -123,12 +123,16 @@ export default async function ProjectDetailPage({
       updated_at: new Date().toISOString()
     }
 
-    await supabase
+    const { error } = await supabase
       .from('projects')
       .update(updates)
       .eq('id', project.id)
 
-    redirect(`/admin/projects/${updates.slug || project.id}`)
+    if (error) {
+      redirect(`/admin/projects/${project.slug || project.id}?error=${encodeURIComponent('Error al guardar: ' + error.message)}`)
+    }
+
+    redirect(`/admin/projects/${updates.slug || project.id}?success=${encodeURIComponent('Proyecto guardado')}`)
   }
 
   async function deleteProject() {
@@ -145,12 +149,16 @@ export default async function ProjectDetailPage({
       actor: 'admin'
     })
 
-    await supabase
+    const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', project.id)
 
-    redirect('/admin/projects')
+    if (error) {
+      redirect(`/admin/projects/${project.slug || project.id}?error=${encodeURIComponent('Error al eliminar: ' + error.message)}`)
+    }
+
+    redirect(`/admin/projects?success=${encodeURIComponent('Proyecto eliminado')}`)
   }
 
   return (
@@ -368,10 +376,10 @@ export default async function ProjectDetailPage({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(project.supabase_projects as { name: string; ref: string } | null) ? (
+                {(project.supabase_projects as { name: string; supabase_ref: string } | null) ? (
                   <div className="p-4 rounded-lg bg-zinc-800">
                     <div className="font-medium">{(project.supabase_projects as { name: string }).name}</div>
-                    <div className="text-sm text-zinc-400 font-mono">{(project.supabase_projects as { ref: string }).ref}</div>
+                    <div className="text-sm text-zinc-400 font-mono">{(project.supabase_projects as { supabase_ref: string }).supabase_ref}</div>
                   </div>
                 ) : (
                   <p className="text-zinc-500">Sin proyecto Supabase</p>
