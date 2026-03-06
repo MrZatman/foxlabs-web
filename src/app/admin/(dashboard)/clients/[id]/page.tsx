@@ -429,7 +429,7 @@ export default async function ClientDetailPage({
                             #{request.request_number} {request.title}
                           </div>
                           <div className="text-sm text-zinc-500">
-                            {(request.projects as { name: string } | null)?.name || 'Sin proyecto'}
+                            {(request.projects as unknown as { name: string } | null)?.name || 'Sin proyecto'}
                           </div>
                         </div>
                       </div>

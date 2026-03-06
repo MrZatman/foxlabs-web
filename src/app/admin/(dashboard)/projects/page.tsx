@@ -151,13 +151,13 @@ export default async function ProjectsPage({
                         <div className="text-sm text-zinc-500">{project.slug}</div>
                       </td>
                       <td className="p-4 text-zinc-400 hidden md:table-cell">
-                        {(project.clients as { name: string } | null)?.name || '-'}
+                        {(project.clients as unknown as { name: string } | null)?.name || '-'}
                       </td>
                       <td className="p-4 text-zinc-400 hidden lg:table-cell text-sm">
                         {(project.chrome_profiles as { email: string } | null)?.email || '-'}
                       </td>
                       <td className="p-4 text-zinc-400 hidden lg:table-cell text-sm">
-                        {(project.supabase_projects as { name: string } | null)?.name || '-'}
+                        {(project.supabase_projects as unknown as { name: string } | null)?.name || '-'}
                       </td>
                       <td className="p-4">
                         <Badge className={statusColors[project.status] || 'bg-zinc-700'}>

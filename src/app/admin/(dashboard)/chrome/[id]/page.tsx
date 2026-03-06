@@ -185,9 +185,9 @@ export default async function ChromeProfileDetailPage({
                         <div className="font-medium">{sp.name}</div>
                         <div className="text-sm text-zinc-500 font-mono">{sp.ref}</div>
                       </div>
-                      {(sp.projects as { name: string } | null) ? (
+                      {(sp.projects as unknown as { name: string } | null) ? (
                         <Badge variant="secondary">
-                          {(sp.projects as { name: string }).name}
+                          {(sp.projects as unknown as { name: string }).name}
                         </Badge>
                       ) : (
                         <Badge className="bg-green-500/20 text-green-400">Libre</Badge>

@@ -155,7 +155,7 @@ export default async function RequestDetailPage({
             <h1 className="text-2xl font-bold">{request.title}</h1>
           </div>
           <p className="text-zinc-400">
-            {(request.projects as { name: string } | null)?.name || 'Sin proyecto'}
+            {(request.projects as unknown as { name: string } | null)?.name || 'Sin proyecto'}
           </p>
         </div>
         <Badge className={statusColors[request.status] || 'bg-zinc-700'}>

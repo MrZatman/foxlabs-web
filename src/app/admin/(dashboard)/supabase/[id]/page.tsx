@@ -145,7 +145,7 @@ export default async function SupabaseProjectDetailPage({
                   className="block p-3 rounded-lg bg-zinc-800 hover:bg-zinc-700"
                 >
                   <div className="font-medium">
-                    {(sp.chrome_profiles as { name: string }).name || (sp.chrome_profiles as { email: string }).email}
+                    {(sp.chrome_profiles as unknown as { name: string }).name || (sp.chrome_profiles as { email: string }).email}
                   </div>
                   <div className="text-sm text-zinc-400">
                     {(sp.chrome_profiles as { email: string }).email}
@@ -171,9 +171,9 @@ export default async function SupabaseProjectDetailPage({
                   href={`/admin/projects/${(sp.projects as { slug: string }).slug || (sp.projects as { id: string }).id}`}
                   className="block p-3 rounded-lg bg-zinc-800 hover:bg-zinc-700"
                 >
-                  <div className="font-medium">{(sp.projects as { name: string }).name}</div>
+                  <div className="font-medium">{(sp.projects as unknown as { name: string }).name}</div>
                   <div className="text-sm text-zinc-400">
-                    {((sp.projects as { clients: { name: string } }).clients as { name: string })?.name || 'Sin cliente'}
+                    {((sp.projects as { clients: { name: string } }).clients as unknown as { name: string })?.name || 'Sin cliente'}
                   </div>
                 </Link>
               ) : (

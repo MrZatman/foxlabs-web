@@ -147,12 +147,12 @@ export default async function SupabaseProjectsPage({
                         {(sp.chrome_profiles as { email: string } | null)?.email || '-'}
                       </td>
                       <td className="p-4">
-                        {(sp.projects as { name: string } | null) ? (
+                        {(sp.projects as unknown as { name: string } | null) ? (
                           <Link
                             href={`/admin/projects/${(sp.projects as { slug: string })?.slug || (sp.projects as { id: string })?.id}`}
                             className="hover:text-orange-500"
                           >
-                            {(sp.projects as { name: string }).name}
+                            {(sp.projects as unknown as { name: string }).name}
                           </Link>
                         ) : (
                           <Badge className="bg-green-500/20 text-green-400">Libre</Badge>

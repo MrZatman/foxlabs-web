@@ -154,7 +154,7 @@ export default async function RequestsPage({
                           </Link>
                         </td>
                         <td className="p-4 text-zinc-400 hidden md:table-cell">
-                          {(request.projects as { name: string } | null)?.name || '-'}
+                          {(request.projects as unknown as { name: string } | null)?.name || '-'}
                         </td>
                         <td className="p-4">
                           <Badge className={`

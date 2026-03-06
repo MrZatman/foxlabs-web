@@ -108,7 +108,7 @@ export default async function QueuePage() {
                   #{(currentExecution.requests as { request_number: number })?.request_number} {(currentExecution.requests as { title: string })?.title}
                 </Link>
                 <div className="text-sm text-zinc-400">
-                  {((currentExecution.requests as { projects: { name: string } })?.projects as { name: string })?.name}
+                  {((currentExecution.requests as { projects: { name: string } })?.projects as unknown as { name: string })?.name}
                 </div>
               </div>
               <Button variant="outline" size="sm">
@@ -161,7 +161,7 @@ export default async function QueuePage() {
                       #{(item.requests as { request_number: number })?.request_number} {(item.requests as { title: string })?.title}
                     </Link>
                     <div className="text-sm text-zinc-400">
-                      {((item.requests as { projects: { name: string } })?.projects as { name: string })?.name}
+                      {((item.requests as { projects: { name: string } })?.projects as unknown as { name: string })?.name}
                       {(item.requests as { estimated_hours: number })?.estimated_hours && (
                         <span className="ml-2">• {(item.requests as { estimated_hours: number }).estimated_hours}h estimadas</span>
                       )}

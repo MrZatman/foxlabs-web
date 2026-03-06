@@ -359,7 +359,7 @@ export default async function ProjectDetailPage({
               <CardContent>
                 {(project.chrome_profiles as { email: string; name: string } | null) ? (
                   <div className="p-4 rounded-lg bg-zinc-800">
-                    <div className="font-medium">{(project.chrome_profiles as { name: string }).name}</div>
+                    <div className="font-medium">{(project.chrome_profiles as unknown as { name: string }).name}</div>
                     <div className="text-sm text-zinc-400">{(project.chrome_profiles as { email: string }).email}</div>
                   </div>
                 ) : (
@@ -378,7 +378,7 @@ export default async function ProjectDetailPage({
               <CardContent>
                 {(project.supabase_projects as { name: string; supabase_ref: string } | null) ? (
                   <div className="p-4 rounded-lg bg-zinc-800">
-                    <div className="font-medium">{(project.supabase_projects as { name: string }).name}</div>
+                    <div className="font-medium">{(project.supabase_projects as unknown as { name: string }).name}</div>
                     <div className="text-sm text-zinc-400 font-mono">{(project.supabase_projects as { supabase_ref: string }).supabase_ref}</div>
                   </div>
                 ) : (
