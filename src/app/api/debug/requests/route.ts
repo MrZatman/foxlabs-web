@@ -27,7 +27,7 @@ export async function GET() {
       title: r.title,
       status: r.status,
       project_id: r.project_id,
-      project_name: (r.projects as { name: string } | null)?.name || 'UNKNOWN'
+      project_name: (r.projects as unknown as { name: string } | null)?.name || 'UNKNOWN'
     }))
   })
 }

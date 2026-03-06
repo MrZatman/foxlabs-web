@@ -77,7 +77,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
           </div>
           <h1 className="text-2xl font-bold">{request.title}</h1>
           <p className="text-zinc-400 mt-1">
-            {(request.projects as { name: string } | null)?.name} • {new Date(request.created_at).toLocaleDateString()}
+            {(request.projects as unknown as { name: string } | null)?.name} • {new Date(request.created_at).toLocaleDateString()}
           </p>
         </div>
 
