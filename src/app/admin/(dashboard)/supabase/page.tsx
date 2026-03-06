@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Search, Eye, ExternalLink, RefreshCw } from 'lucide-react'
+import { Search, Eye, ExternalLink, RefreshCw, Plus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -53,10 +53,18 @@ export default async function SupabaseProjectsPage({
           <h1 className="text-2xl font-bold">Proyectos Supabase</h1>
           <p className="text-zinc-400">Gestiona tus proyectos de Supabase</p>
         </div>
-        <Button variant="outline">
-          <RefreshCw size={16} className="mr-2" />
-          Sincronizar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <RefreshCw size={16} className="mr-2" />
+            Sincronizar
+          </Button>
+          <Link href="/admin/supabase/new">
+            <Button className="bg-orange-500 hover:bg-orange-600">
+              <Plus size={16} className="mr-2" />
+              Nuevo
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
