@@ -39,7 +39,7 @@ export async function GET() {
       name: p.name,
       slug: p.slug,
       folder: p.folder_path,
-      client: (p.clients as { name: string } | null)?.name || 'SIN CLIENTE'
+      client: (p.clients as unknown as { name: string } | null)?.name || 'SIN CLIENTE'
     })),
     chromeProfiles,
     supabaseProjects
