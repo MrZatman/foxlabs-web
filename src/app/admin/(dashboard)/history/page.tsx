@@ -32,13 +32,13 @@ export default async function HistoryPage({
   const supabase = await createClient()
   const activeTab = params.tab || 'table'
 
-  // Default date range: last 30 days
+  // Default date range: last 365 days (to ensure all requests are visible)
   const defaultFrom = new Date()
-  defaultFrom.setDate(defaultFrom.getDate() - 30)
+  defaultFrom.setDate(defaultFrom.getDate() - 365)
   const fromDate = params.from || defaultFrom.toISOString().split('T')[0]
-  const toDate = params.to || new Date().toISOString().split('T')[0]
+  const toDate = params.to || new Date(Date.now() + 86400000).toISOString().split('T')[0] // tomorrow to include today
 
-  // Build query
+  // Build query - fetch all first, then apply date filter
   let query = supabase
     .from('requests')
     .select(`
@@ -46,14 +46,17 @@ export default async function HistoryPage({
       projects(id, name, slug, client_id, clients(id, name)),
       tasks(id, title, status, order)
     `)
-    .gte('created_at', `${fromDate}T00:00:00`)
-    .lte('created_at', `${toDate}T23:59:59`)
     .order('created_at', { ascending: false })
 
-  // Apply filters
-  if (params.client) {
-    query = query.eq('projects.client_id', params.client)
+  // Apply date filters only when explicitly set
+  if (params.from) {
+    query = query.gte('created_at', `${params.from}T00:00:00`)
   }
+  if (params.to) {
+    query = query.lte('created_at', `${params.to}T23:59:59`)
+  }
+
+  // Apply other filters
   if (params.project) {
     query = query.eq('project_id', params.project)
   }
@@ -73,7 +76,15 @@ export default async function HistoryPage({
     query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`)
   }
 
-  const { data: requests, error } = await query.limit(500)
+  let { data: requests, error } = await query.limit(500)
+
+  // Filter by client in memory (can't filter nested relation in Supabase)
+  if (params.client && requests) {
+    requests = requests.filter(r => {
+      const project = r.projects as { client_id?: string } | null
+      return project?.client_id === params.client
+    })
+  }
 
   if (error) {
     console.error('Error fetching requests:', error)
