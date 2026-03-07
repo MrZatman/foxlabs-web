@@ -78,6 +78,48 @@ const name = request.projects.clients.email
 const name = (request.projects as unknown as { clients: { email: string } })?.clients?.email
 ```
 
+## Conexion con FoxOrchestrator
+
+Este repo es el **frontend**. El backend (Claude Code, ejecucion) esta en `foxorchestrator` (Electron, corre local).
+
+**Flujo completo:**
+```
+Cliente crea request (foxlabs-web)
+    ↓
+Supabase (INSERT en requests)
+    ↓
+FoxOrchestrator detecta (realtime) → Telegram notifica
+    ↓
+Admin aprueba (/aprobar) → Claude Code ejecuta
+    ↓
+Push a GitHub → Vercel deploya
+    ↓
+foxlabs-web muestra "Completado"
+```
+
+**Comunicacion**: Solo via Supabase (realtime). No hay API directa entre repos.
+
+## Supabase Tablas Clave
+
+| Tabla | Uso en este repo |
+|-------|------------------|
+| requests | CRUD desde portal/admin |
+| tasks | Solo lectura (las crea foxorchestrator) |
+| projects | Listado y detalle |
+| clients | Portal auth, datos |
+| leads | Cotizador |
+| activity_log | Timeline en portal |
+
+## Componentes Clave
+
+```
+src/components/
+├── cotizador/        # Wizard de cotizacion
+├── portal/           # UI cliente autenticado
+├── admin/            # Dashboard administrativo
+└── ui/               # shadcn/ui components
+```
+
 ## Referencias
 
 - @.claude/rules/database.md - Schema SQL
