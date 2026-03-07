@@ -34,9 +34,6 @@ interface Props {
 
 const ITEMS_PER_PAGE = 20
 
-// Primary columns - always visible
-const PRIMARY_COLUMNS = ['inbox', 'queued', 'in_progress', 'completed']
-
 export function KanbanBoard({ initialRequests, columns, priorityColors }: Props) {
   const [requests, setRequests] = useState<Request[]>(initialRequests)
   const [isConnected, setIsConnected] = useState(false)
@@ -53,19 +50,6 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
     requestsByStatus[col.id] = requests.filter(r => r.status === col.id)
   })
 
-  // Determine which columns to show
-  const visibleColumns = columns.filter(col => {
-    const isPrimary = PRIMARY_COLUMNS.includes(col.id)
-    const hasData = (requestsByStatus[col.id]?.length || 0) > 0
-    return isPrimary || hasData
-  })
-
-  // Mobile tabs: primary + any with data
-  const mobileTabs = columns.filter(col => {
-    const isPrimary = PRIMARY_COLUMNS.includes(col.id)
-    const hasData = (requestsByStatus[col.id]?.length || 0) > 0
-    return isPrimary || hasData
-  })
 
   const loadMore = (columnId: string) => {
     setVisibleCounts(prev => ({
@@ -132,7 +116,7 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
         {/* Tab bar */}
         <div className="overflow-x-auto pb-2 -mx-4 px-4">
           <div className="flex gap-1.5 w-max">
-            {mobileTabs.map((column) => {
+            {columns.map((column) => {
               const count = requestsByStatus[column.id]?.length || 0
               const isActive = activeTab === column.id
 
@@ -200,7 +184,7 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
       {/* ========== TABLET/DESKTOP: Columns (>=768px) ========== */}
       <div className="hidden md:block overflow-x-auto pb-4">
         <div className="flex gap-3 w-max">
-          {visibleColumns.map((column) => {
+          {columns.map((column) => {
             const allItems = requestsByStatus[column.id] || []
             const count = allItems.length
             const visibleCount = visibleCounts[column.id] || ITEMS_PER_PAGE
@@ -208,12 +192,10 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
             const hasMore = count > visibleCount
             const isSaturated = count > 50
             const isWarning = count > 30 && count <= 50
-            const isPrimary = PRIMARY_COLUMNS.includes(column.id)
-
             return (
               <div
                 key={column.id}
-                className={`flex-shrink-0 ${isPrimary ? 'min-w-[200px]' : 'min-w-[180px]'} w-72`}
+                className="flex-shrink-0 min-w-[200px] w-72"
               >
                 {/* Header */}
                 <div className="sticky top-0 bg-zinc-950 z-10 pb-2">
