@@ -27,22 +27,54 @@ const priorityColors: Record<string, string> = {
   urgent: 'border-l-red-500'
 }
 
+// Get date filter range
+function getDateRange(period: string): Date | null {
+  const now = new Date()
+  switch (period) {
+    case 'today':
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    case 'week':
+      const weekAgo = new Date(now)
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      return weekAgo
+    case 'month':
+      const monthAgo = new Date(now)
+      monthAgo.setDate(monthAgo.getDate() - 30)
+      return monthAgo
+    case 'all':
+      return null
+    default:
+      // Default to month
+      const defaultMonthAgo = new Date(now)
+      defaultMonthAgo.setDate(defaultMonthAgo.getDate() - 30)
+      return defaultMonthAgo
+  }
+}
+
 export default async function RequestsPage({
   searchParams
 }: {
-  searchParams: Promise<{ view?: string; project?: string; search?: string }>
+  searchParams: Promise<{ view?: string; project?: string; search?: string; date?: string; client?: string }>
 }) {
   const params = await searchParams
   const supabase = await createClient()
   const view = params.view || 'kanban'
+  const dateFilter = params.date || 'month'
 
   let query = supabase
     .from('requests')
     .select(`
       *,
-      projects(name, slug)
+      projects(name, slug, client_id),
+      clients:projects(clients(id, name))
     `)
     .order('created_at', { ascending: false })
+
+  // Date filter
+  const dateRange = getDateRange(dateFilter)
+  if (dateRange) {
+    query = query.gte('created_at', dateRange.toISOString())
+  }
 
   if (params.project) {
     query = query.eq('project_id', params.project)
@@ -54,9 +86,24 @@ export default async function RequestsPage({
 
   const { data: requests } = await query.limit(200)
 
+  // Filter by client if specified (post-query since it's nested)
+  let filteredRequests = requests || []
+  if (params.client) {
+    filteredRequests = filteredRequests.filter((r: Record<string, unknown>) => {
+      const clients = r.clients as { clients?: { id: string } } | null
+      return clients?.clients?.id === params.client
+    })
+  }
+
   // Get projects for filter
   const { data: projects } = await supabase
     .from('projects')
+    .select('id, name')
+    .order('name')
+
+  // Get clients for filter
+  const { data: clients } = await supabase
+    .from('clients')
     .select('id, name')
     .order('name')
 
@@ -79,36 +126,67 @@ export default async function RequestsPage({
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Compact row */}
       <Card className="bg-zinc-900 border-zinc-800">
-        <CardContent className="p-4">
-          <form className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="p-3">
+          <form className="flex flex-wrap items-center gap-2">
             <input type="hidden" name="view" value={view} />
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                <Input
-                  name="search"
-                  placeholder="Buscar por titulo..."
-                  defaultValue={params.search}
-                  className="pl-10 bg-zinc-800 border-zinc-700"
-                />
-              </div>
-            </div>
+
+            {/* Date filter */}
+            <select
+              name="date"
+              defaultValue={dateFilter}
+              className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-white text-sm"
+            >
+              <option value="today">Hoy</option>
+              <option value="week">Esta semana</option>
+              <option value="month">Este mes</option>
+              <option value="all">Todo</option>
+            </select>
+
+            {/* Project filter */}
             <select
               name="project"
               defaultValue={params.project || ''}
-              className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white"
+              className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-white text-sm"
             >
-              <option value="">Todos los proyectos</option>
+              <option value="">Todos proyectos</option>
               {projects?.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
                 </option>
               ))}
             </select>
-            <Button type="submit" variant="secondary">
-              <Filter size={16} className="mr-2" />
+
+            {/* Client filter */}
+            <select
+              name="client"
+              defaultValue={params.client || ''}
+              className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-white text-sm"
+            >
+              <option value="">Todos clientes</option>
+              {clients?.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Search */}
+            <div className="flex-1 min-w-[150px]">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+                <Input
+                  name="search"
+                  placeholder="Buscar..."
+                  defaultValue={params.search}
+                  className="pl-8 py-1.5 h-8 bg-zinc-800 border-zinc-700 text-sm"
+                />
+              </div>
+            </div>
+
+            <Button type="submit" variant="secondary" size="sm">
+              <Filter size={14} className="mr-1" />
               Filtrar
             </Button>
           </form>
@@ -117,7 +195,7 @@ export default async function RequestsPage({
 
       {view === 'kanban' ? (
         <KanbanBoard
-          initialRequests={requests || []}
+          initialRequests={filteredRequests}
           columns={columns}
           priorityColors={priorityColors}
         />
@@ -138,14 +216,14 @@ export default async function RequestsPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {!requests || requests.length === 0 ? (
+                  {filteredRequests.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-zinc-500">
                         No hay requests
                       </td>
                     </tr>
                   ) : (
-                    requests.map((request) => (
+                    filteredRequests.map((request) => (
                       <tr key={request.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
                         <td className="p-4 text-zinc-500">#{request.request_number}</td>
                         <td className="p-4">
