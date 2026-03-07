@@ -308,7 +308,7 @@ export default function MonitorPage() {
                       }`}
                     >
                       <div className={`mt-0.5 ${statusColor}`}>
-                        <Icon className={`h-4 w-4 ${event.event_type === 'vercel_building' ? 'animate-spin' : ''}`} />
+                        <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
