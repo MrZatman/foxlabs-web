@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RequestCard } from './request-card'
-import { ChevronRight } from 'lucide-react'
 
 interface Request {
   id: string
@@ -35,16 +34,18 @@ interface Props {
 
 const ITEMS_PER_PAGE = 20
 
+// Primary columns - always visible
+const PRIMARY_COLUMNS = ['inbox', 'queued', 'in_progress', 'completed']
+
 export function KanbanBoard({ initialRequests, columns, priorityColors }: Props) {
   const [requests, setRequests] = useState<Request[]>(initialRequests)
   const [isConnected, setIsConnected] = useState(false)
-  const [activeTab, setActiveTab] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<string>('inbox')
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {}
     columns.forEach(col => { initial[col.id] = ITEMS_PER_PAGE })
     return initial
   })
-  const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set())
 
   // Group by status
   const requestsByStatus: Record<string, Request[]> = {}
@@ -52,35 +53,25 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
     requestsByStatus[col.id] = requests.filter(r => r.status === col.id)
   })
 
-  // Get non-empty columns for mobile tabs
-  const nonEmptyColumns = columns.filter(col => (requestsByStatus[col.id]?.length || 0) > 0)
+  // Determine which columns to show
+  const visibleColumns = columns.filter(col => {
+    const isPrimary = PRIMARY_COLUMNS.includes(col.id)
+    const hasData = (requestsByStatus[col.id]?.length || 0) > 0
+    return isPrimary || hasData
+  })
 
-  // Set initial active tab to first non-empty column
-  useEffect(() => {
-    if (!activeTab && nonEmptyColumns.length > 0) {
-      setActiveTab(nonEmptyColumns[0].id)
-    } else if (!activeTab && columns.length > 0) {
-      setActiveTab(columns[0].id)
-    }
-  }, [activeTab, nonEmptyColumns, columns])
+  // Mobile tabs: primary + any with data
+  const mobileTabs = columns.filter(col => {
+    const isPrimary = PRIMARY_COLUMNS.includes(col.id)
+    const hasData = (requestsByStatus[col.id]?.length || 0) > 0
+    return isPrimary || hasData
+  })
 
   const loadMore = (columnId: string) => {
     setVisibleCounts(prev => ({
       ...prev,
       [columnId]: (prev[columnId] || ITEMS_PER_PAGE) + ITEMS_PER_PAGE
     }))
-  }
-
-  const toggleColumn = (columnId: string) => {
-    setExpandedColumns(prev => {
-      const next = new Set(prev)
-      if (next.has(columnId)) {
-        next.delete(columnId)
-      } else {
-        next.add(columnId)
-      }
-      return next
-    })
   }
 
   useEffect(() => {
@@ -138,35 +129,33 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
 
       {/* ========== MOBILE: Tabs (<768px) ========== */}
       <div className="md:hidden">
-        {/* Tab bar - only show non-empty columns */}
+        {/* Tab bar */}
         <div className="overflow-x-auto pb-2 -mx-4 px-4">
           <div className="flex gap-1.5 w-max">
-            {nonEmptyColumns.length > 0 ? (
-              nonEmptyColumns.map((column) => {
-                const count = requestsByStatus[column.id]?.length || 0
-                const isActive = activeTab === column.id
+            {mobileTabs.map((column) => {
+              const count = requestsByStatus[column.id]?.length || 0
+              const isActive = activeTab === column.id
 
-                return (
-                  <button
-                    key={column.id}
-                    onClick={() => setActiveTab(column.id)}
-                    className={`
-                      flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all
-                      ${isActive
-                        ? 'bg-zinc-700 text-white'
-                        : 'bg-zinc-800/50 text-zinc-400'
-                      }
-                    `}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${column.color}`} />
-                    <span>{column.label}</span>
+              return (
+                <button
+                  key={column.id}
+                  onClick={() => setActiveTab(column.id)}
+                  className={`
+                    flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all
+                    ${isActive
+                      ? 'bg-zinc-700 text-white'
+                      : 'bg-zinc-800/50 text-zinc-400'
+                    }
+                  `}
+                >
+                  <span className={`w-2 h-2 rounded-full ${column.color}`} />
+                  <span>{column.label}</span>
+                  {count > 0 && (
                     <span className="text-xs opacity-60">({count})</span>
-                  </button>
-                )
-              })
-            ) : (
-              <div className="text-zinc-500 text-sm py-2">Sin requests activos</div>
-            )}
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -190,8 +179,8 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
                   />
                 ))}
                 {count === 0 && (
-                  <div className="p-6 text-center text-zinc-500 text-sm border border-dashed border-zinc-800 rounded-lg">
-                    Sin requests en {column.label}
+                  <div className="py-12 text-center text-zinc-600 text-sm">
+                    Sin requests
                   </div>
                 )}
                 {hasMore && (
@@ -209,72 +198,43 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
       </div>
 
       {/* ========== TABLET/DESKTOP: Columns (>=768px) ========== */}
-      <div className="hidden md:block">
-        <div className="flex gap-2 lg:gap-3 xl:gap-4 w-full">
-          {columns.map((column) => {
+      <div className="hidden md:block overflow-x-auto pb-4">
+        <div className="flex gap-3 w-max">
+          {visibleColumns.map((column) => {
             const allItems = requestsByStatus[column.id] || []
             const count = allItems.length
-            const isEmpty = count === 0
             const visibleCount = visibleCounts[column.id] || ITEMS_PER_PAGE
             const visibleItems = allItems.slice(0, visibleCount)
             const hasMore = count > visibleCount
             const isSaturated = count > 50
             const isWarning = count > 30 && count <= 50
-            const isManuallyExpanded = expandedColumns.has(column.id)
+            const isPrimary = PRIMARY_COLUMNS.includes(column.id)
 
-            // Empty column - collapsed
-            if (isEmpty && !isManuallyExpanded) {
-              return (
-                <div
-                  key={column.id}
-                  onClick={() => toggleColumn(column.id)}
-                  className="w-10 lg:w-12 flex-shrink-0 cursor-pointer group"
-                >
-                  <div className="sticky top-0 bg-zinc-950 z-10 py-2">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className={`w-3 h-3 rounded-full ${column.color}`} />
-                      <ChevronRight size={14} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-                    </div>
-                  </div>
-                  <div className="h-20 flex items-center justify-center">
-                    <span className="text-zinc-700 text-xs -rotate-90 whitespace-nowrap">
-                      {column.label}
-                    </span>
-                  </div>
-                </div>
-              )
-            }
-
-            // Column with content or manually expanded
             return (
               <div
                 key={column.id}
-                className="flex-1 min-w-[160px] lg:min-w-[180px] xl:min-w-[220px] max-w-[320px] flex-shrink-0 transition-all duration-200"
+                className={`flex-shrink-0 ${isPrimary ? 'min-w-[200px]' : 'min-w-[180px]'} w-72`}
               >
                 {/* Header */}
                 <div className="sticky top-0 bg-zinc-950 z-10 pb-2">
                   <div className="flex items-center gap-2 py-2">
                     <div className={`w-3 h-3 rounded-full flex-shrink-0 ${column.color}`} />
-                    <span className="font-medium text-sm truncate">
+                    <span className="font-medium text-sm">
                       {column.label}
                     </span>
                     <span className="text-zinc-500 text-sm">({count})</span>
                     {isSaturated && (
-                      <span className="ml-auto text-red-400 text-xs flex-shrink-0" title="Columna saturada">
-                        !!
-                      </span>
+                      <span className="ml-auto text-red-400 text-xs" title="Columna saturada">!!</span>
                     )}
                     {isWarning && (
-                      <span className="ml-auto text-yellow-400 text-xs flex-shrink-0" title="Muchos items">
-                        !
-                      </span>
+                      <span className="ml-auto text-yellow-400 text-xs" title="Muchos items">!</span>
                     )}
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
-                  <div className="space-y-2">
+                <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
+                  <div className="space-y-2 pr-1">
                     {visibleItems.map((request) => (
                       <RequestCard
                         key={request.id}
@@ -282,14 +242,6 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
                         priorityColors={priorityColors}
                       />
                     ))}
-                    {count === 0 && (
-                      <div
-                        onClick={() => toggleColumn(column.id)}
-                        className="p-4 text-center text-zinc-600 text-sm border border-dashed border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-700"
-                      >
-                        Vacio - click para colapsar
-                      </div>
-                    )}
                     {hasMore && (
                       <button
                         onClick={() => loadMore(column.id)}
