@@ -76,11 +76,19 @@ export default async function HistoryPage({
     query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`)
   }
 
-  let { data: requests, error } = await query.limit(500)
+  const { data: requests, error } = await query.limit(500)
+
+  // Debug: log to server console
+  console.log('[History] Query result:', {
+    count: requests?.length ?? 0,
+    error: error?.message,
+    firstRequest: requests?.[0]?.title
+  })
 
   // Filter by client in memory (can't filter nested relation in Supabase)
-  if (params.client && requests) {
-    requests = requests.filter(r => {
+  let filteredRequests = requests || []
+  if (params.client && filteredRequests.length > 0) {
+    filteredRequests = filteredRequests.filter(r => {
       const project = r.projects as { client_id?: string } | null
       return project?.client_id === params.client
     })
@@ -88,6 +96,15 @@ export default async function HistoryPage({
 
   if (error) {
     console.error('Error fetching requests:', error)
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Error cargando datos</h1>
+        <p className="text-zinc-400">{error.message}</p>
+        <pre className="mt-4 text-left text-xs bg-zinc-900 p-4 rounded overflow-auto">
+          {JSON.stringify(error, null, 2)}
+        </pre>
+      </div>
+    )
   }
 
   // Get filter options
@@ -100,12 +117,12 @@ export default async function HistoryPage({
   ])
 
   // Calculate KPIs
-  const totalRequests = requests?.length || 0
-  const completedRequests = requests?.filter(r => r.status === 'completed') || []
-  const failedRequests = requests?.filter(r => r.status === 'failed' || r.status === 'cancelled') || []
-  const activeRequests = requests?.filter(r =>
+  const totalRequests = filteredRequests.length
+  const completedRequests = filteredRequests.filter(r => r.status === 'completed')
+  const failedRequests = filteredRequests.filter(r => r.status === 'failed' || r.status === 'cancelled')
+  const activeRequests = filteredRequests.filter(r =>
     !['completed', 'failed', 'cancelled'].includes(r.status)
-  ) || []
+  )
 
   // Average completion time (in hours)
   const completionTimes = completedRequests
@@ -125,7 +142,7 @@ export default async function HistoryPage({
 
   // Group by client
   const requestsByClient: Record<string, { name: string; count: number; completed: number }> = {}
-  requests?.forEach(r => {
+  filteredRequests.forEach(r => {
     const client = (r.projects as { clients?: { id: string; name: string } })?.clients
     if (client) {
       if (!requestsByClient[client.id]) {
@@ -140,7 +157,7 @@ export default async function HistoryPage({
 
   // Group by status
   const requestsByStatus: Record<string, number> = {}
-  requests?.forEach(r => {
+  filteredRequests.forEach(r => {
     requestsByStatus[r.status] = (requestsByStatus[r.status] || 0) + 1
   })
 
@@ -178,7 +195,7 @@ export default async function HistoryPage({
           </p>
         </div>
         <ExportButtons
-          requests={requests || []}
+          requests={filteredRequests}
           kpis={kpis}
           dateRange={{ from: fromDate, to: toDate }}
         />
@@ -205,20 +222,20 @@ export default async function HistoryPage({
 
         <TabsContent value="table">
           <Suspense fallback={<LoadingState />}>
-            <HistoryTable requests={requests || []} />
+            <HistoryTable requests={filteredRequests} />
           </Suspense>
         </TabsContent>
 
         <TabsContent value="timeline">
           <Suspense fallback={<LoadingState />}>
-            <HistoryTimeline requests={requests || []} />
+            <HistoryTimeline requests={filteredRequests} />
           </Suspense>
         </TabsContent>
 
         <TabsContent value="comparison">
           <Suspense fallback={<LoadingState />}>
             <HistoryComparison
-              requests={requests || []}
+              requests={filteredRequests}
               kpis={kpis}
               dateRange={{ from: fromDate, to: toDate }}
             />
@@ -228,10 +245,10 @@ export default async function HistoryPage({
         <TabsContent value="cards">
           <Suspense fallback={<LoadingState />}>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {requests?.map(request => (
+              {filteredRequests.map(request => (
                 <RequestCard key={request.id} request={request} />
               ))}
-              {(!requests || requests.length === 0) && (
+              {filteredRequests.length === 0 && (
                 <div className="col-span-full text-center py-12 text-zinc-500">
                   No hay requests en el periodo seleccionado
                 </div>
