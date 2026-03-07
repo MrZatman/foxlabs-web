@@ -58,7 +58,7 @@ const eventIcons: Record<string, React.ElementType> = {
   git_commit: GitCommit,
   git_push: GitCommit,
   git_push_failed: XCircle,
-  vercel_building: Loader2,
+  vercel_building: Rocket,
   vercel_ready: Rocket,
   vercel_failed: XCircle,
   queue_processing: Server
