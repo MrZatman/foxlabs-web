@@ -43,8 +43,7 @@ export default async function HistoryPage({
     .from('requests')
     .select(`
       *,
-      projects(id, name, slug, client_id, clients(id, name)),
-      tasks(id, title, status, order)
+      projects(id, name, slug, client_id, clients(id, name))
     `)
     .order('created_at', { ascending: false })
 
@@ -273,9 +272,6 @@ function LoadingState() {
 
 function RequestCard({ request }: { request: Record<string, unknown> }) {
   const project = request.projects as { name?: string; clients?: { name?: string } } | null
-  const tasks = request.tasks as Array<{ status: string }> | null
-  const completedTasks = tasks?.filter(t => t.status === 'done').length || 0
-  const totalTasks = tasks?.length || 0
 
   const statusColors: Record<string, string> = {
     inbox: 'bg-zinc-500',
@@ -303,9 +299,6 @@ function RequestCard({ request }: { request: Record<string, unknown> }) {
           <div>{project?.name || 'Sin proyecto'}</div>
           {project?.clients?.name && (
             <div className="text-zinc-500">{project.clients.name}</div>
-          )}
-          {totalTasks > 0 && (
-            <div className="text-zinc-500">{completedTasks}/{totalTasks} tareas</div>
           )}
         </div>
         <div className="mt-3 pt-3 border-t border-zinc-800 text-xs text-zinc-500">
