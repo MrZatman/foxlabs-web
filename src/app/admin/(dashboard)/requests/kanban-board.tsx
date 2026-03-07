@@ -196,8 +196,8 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
       </div>
 
       {/* Desktop: Full Kanban */}
-      <div className="hidden md:block overflow-x-auto pb-4 -mx-4 px-4 lg:-mx-6 lg:px-6">
-        <div className="flex gap-3" style={{ width: 'max-content' }}>
+      <div className="hidden md:block overflow-x-auto pb-4">
+        <div className="flex gap-3 w-max">
           {columns.map((column) => {
             const allItems = requestsByStatus[column.id] || []
             const count = allItems.length

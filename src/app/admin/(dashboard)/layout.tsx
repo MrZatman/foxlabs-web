@@ -107,7 +107,7 @@ export default async function AdminLayout({
     <div className="min-h-screen bg-black text-white flex">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-64 flex-shrink-0">
-        <div className="fixed w-64 h-screen">
+        <div className="fixed left-0 top-0 w-64 h-screen z-50">
           <Sidebar />
         </div>
       </aside>
@@ -161,7 +161,7 @@ export default async function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">
+        <main className="flex-1 p-4 lg:p-6">
           {children}
         </main>
       </div>
