@@ -73,3 +73,37 @@ CREATE TABLE requests (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+## execution_events (Monitor)
+```sql
+CREATE TABLE execution_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID REFERENCES requests(id) ON DELETE CASCADE,
+  task_id UUID,
+  event_type VARCHAR(50) NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  message TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+-- Realtime enabled
+-- Indexes: request_id, created_at DESC, status
+```
+
+## pokayoke_log (Monitor)
+```sql
+CREATE TABLE pokayoke_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID REFERENCES requests(id) ON DELETE CASCADE,
+  task_id UUID,
+  rule_id VARCHAR(100) NOT NULL,
+  rule_name VARCHAR(255) NOT NULL,
+  severity VARCHAR(20) NOT NULL,
+  detected TEXT NOT NULL,
+  expected TEXT,
+  action_taken VARCHAR(50) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+-- Realtime enabled
+-- Auto-purge after 7 days via purge_old_events()
+```

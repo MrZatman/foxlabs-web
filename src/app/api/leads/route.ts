@@ -8,6 +8,8 @@ const supabase = createClient(
 
 const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN
 const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID
+const CALLMEBOT_PHONE = process.env.CALLMEBOT_PHONE
+const CALLMEBOT_APIKEY = process.env.CALLMEBOT_APIKEY
 
 interface LeadData {
   projectType: string
@@ -60,8 +62,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    // Send Telegram notification to admin
-    await notifyAdmin(data, lead?.lead_number || 0)
+    // Send notifications to admin (parallel)
+    await Promise.all([
+      notifyTelegram(data, lead?.lead_number || 0),
+      notifyWhatsApp(data, lead?.lead_number || 0)
+    ])
 
     return NextResponse.json({
       success: true,
@@ -74,7 +79,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function notifyAdmin(data: LeadData, leadNumber: number) {
+async function notifyTelegram(data: LeadData, leadNumber: number) {
   if (!ADMIN_BOT_TOKEN || !ADMIN_CHAT_ID) {
     console.log('[Leads API] Telegram not configured, skipping notification')
     return
@@ -128,5 +133,41 @@ ${data.features.length > 0 ? `• Features: ${data.features.join(', ')}` : ''}
     console.log(`[Leads API] Telegram notification sent for lead #${leadNumber}`)
   } catch (error) {
     console.error('[Leads API] Telegram error:', error)
+  }
+}
+
+async function notifyWhatsApp(data: LeadData, leadNumber: number) {
+  if (!CALLMEBOT_PHONE || !CALLMEBOT_APIKEY) {
+    console.log('[Leads API] WhatsApp not configured, skipping notification')
+    return
+  }
+
+  const budgetLabels: Record<string, string> = {
+    small: '$1k-$3k',
+    medium: '$3k-$8k',
+    large: '$8k-$15k',
+    enterprise: '$15k+',
+    unsure: 'No seguro'
+  }
+
+  const message = `🦊 *Nuevo Lead #${leadNumber}*
+
+*${data.name}*
+${data.email}
+${data.phone ? `Tel: ${data.phone}` : ''}
+${data.company ? `Empresa: ${data.company}` : ''}
+
+Tipo: ${data.projectType}
+Presupuesto: ${budgetLabels[data.budget] || data.budget}
+Timeline: ${data.timeline}
+
+${data.description.slice(0, 200)}${data.description.length > 200 ? '...' : ''}`
+
+  try {
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&text=${encodeURIComponent(message)}&apikey=${CALLMEBOT_APIKEY}`
+    await fetch(url)
+    console.log(`[Leads API] WhatsApp notification sent for lead #${leadNumber}`)
+  } catch (error) {
+    console.error('[Leads API] WhatsApp error:', error)
   }
 }
