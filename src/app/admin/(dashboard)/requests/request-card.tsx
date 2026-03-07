@@ -13,7 +13,8 @@ import {
   Loader2,
   CheckCircle,
   Bot,
-  AlertTriangle
+  AlertTriangle,
+  Tag
 } from 'lucide-react'
 
 interface Request {
@@ -37,25 +38,18 @@ interface RequestCardProps {
   priorityColors: Record<string, string>
 }
 
-// Status messages for user feedback
-const statusMessages: Record<string, { icon: React.ReactNode; message: string }> = {
-  inbox: { icon: <Clock size={12} />, message: 'Esperando' },
-  planning: { icon: <Loader2 size={12} className="animate-spin" />, message: 'Planificando...' },
-  pending_approval: { icon: <Clock size={12} />, message: 'Pendiente aprobacion' },
-  approved: { icon: <CheckCircle size={12} />, message: 'Aprobado' },
-  queued: { icon: <Clock size={12} />, message: 'En cola' },
-  in_progress: { icon: <Bot size={12} className="animate-pulse" />, message: 'Ejecutando...' },
-  pending_review: { icon: <Clock size={12} />, message: 'En review' },
-  pending_deploy: { icon: <Loader2 size={12} className="animate-spin" />, message: 'Desplegando...' },
-  completed: { icon: <CheckCircle size={12} />, message: 'Completado' },
-  cancelled: { icon: null, message: 'Cancelado' },
-}
-
-// Calculate hours since last update
-function getHoursSinceUpdate(updatedAt: string): number {
-  const now = new Date()
-  const updated = new Date(updatedAt)
-  return Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60))
+// Status config
+const statusConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+  inbox: { icon: <Clock size={14} />, label: 'Inbox', color: 'text-zinc-400' },
+  planning: { icon: <Loader2 size={14} className="animate-spin" />, label: 'Planificando', color: 'text-blue-400' },
+  pending_approval: { icon: <Clock size={14} />, label: 'Pendiente', color: 'text-yellow-400' },
+  approved: { icon: <CheckCircle size={14} />, label: 'Aprobado', color: 'text-purple-400' },
+  queued: { icon: <Clock size={14} />, label: 'En cola', color: 'text-indigo-400' },
+  in_progress: { icon: <Bot size={14} className="animate-pulse" />, label: 'Ejecutando', color: 'text-orange-400' },
+  pending_review: { icon: <Clock size={14} />, label: 'Review', color: 'text-cyan-400' },
+  pending_deploy: { icon: <Loader2 size={14} className="animate-spin" />, label: 'Deploy', color: 'text-pink-400' },
+  completed: { icon: <CheckCircle size={14} />, label: 'Completado', color: 'text-green-400' },
+  cancelled: { icon: null, label: 'Cancelado', color: 'text-red-400' },
 }
 
 // Get relative time string
@@ -74,8 +68,9 @@ function getRelativeTime(dateStr: string): string {
   return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
 }
 
-// Get stale status based on hours
-function getStaleStatus(hours: number): 'normal' | 'warning' | 'critical' {
+// Get stale status
+function getStaleStatus(updatedAt: string): 'normal' | 'warning' | 'critical' {
+  const hours = Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60))
   if (hours >= 72) return 'critical'
   if (hours >= 24) return 'warning'
   return 'normal'
@@ -84,97 +79,79 @@ function getStaleStatus(hours: number): 'normal' | 'warning' | 'critical' {
 export function RequestCard({ request, priorityColors }: RequestCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const hoursSinceUpdate = getHoursSinceUpdate(request.updated_at)
-  const staleStatus = getStaleStatus(hoursSinceUpdate)
+  const staleStatus = getStaleStatus(request.updated_at)
   const relativeTime = getRelativeTime(request.updated_at)
+  const status = statusConfig[request.status] || statusConfig.inbox
 
-  // Determine border classes
+  // Border classes
   const priorityBorder = priorityColors[request.priority] || 'border-l-zinc-500'
   const staleBorder = staleStatus === 'critical'
-    ? 'border-t-red-500 border-t-2'
+    ? 'border-t-2 border-t-red-500'
     : staleStatus === 'warning'
-      ? 'border-t-yellow-500 border-t-2'
+      ? 'border-t-2 border-t-yellow-500'
       : ''
 
-  // Active status ring
   const isActive = ['in_progress', 'planning', 'pending_deploy'].includes(request.status)
-  const activeRing = isActive ? 'ring-1 ring-orange-500/30' : ''
 
+  // EXPANDED VIEW
   if (isExpanded) {
     return (
-      <Card className={`bg-zinc-900 border-zinc-800 border-l-4 ${priorityBorder} ${staleBorder} ${activeRing}`}>
-        <CardContent className="p-3 space-y-3">
+      <Card
+        className={`bg-zinc-900 border-zinc-800 border-l-4 ${priorityBorder} ${staleBorder} ${isActive ? 'ring-1 ring-orange-500/30' : ''}`}
+      >
+        <CardContent className="p-0">
           {/* Header */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <span>#{request.request_number}</span>
-                <span>{relativeTime}</span>
-                {staleStatus !== 'normal' && (
-                  <AlertTriangle size={12} className={staleStatus === 'critical' ? 'text-red-400' : 'text-yellow-400'} />
-                )}
-              </div>
-              <div className="font-medium mt-1">{request.title}</div>
+          <div
+            className="flex items-center justify-between p-3 border-b border-zinc-800 cursor-pointer hover:bg-zinc-800/50"
+            onClick={() => setIsExpanded(false)}
+          >
+            <div className="flex items-center gap-2 text-sm text-zinc-400">
+              <span className="font-mono">#{request.request_number}</span>
+              <span>•</span>
+              <span>{relativeTime}</span>
+              {staleStatus !== 'normal' && (
+                <AlertTriangle size={14} className={staleStatus === 'critical' ? 'text-red-400' : 'text-yellow-400'} />
+              )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 shrink-0"
-              onClick={() => setIsExpanded(false)}
-            >
-              <ChevronUp size={14} />
-            </Button>
+            <ChevronUp size={20} className="text-zinc-400" />
+          </div>
+
+          {/* Title - Full */}
+          <div className="px-3 py-2 border-b border-zinc-800/50">
+            <p className="font-medium text-white leading-snug">
+              {request.title}
+            </p>
           </div>
 
           {/* Description */}
           {request.description && (
-            <p className="text-sm text-zinc-400 line-clamp-3">
-              {request.description}
-            </p>
+            <div className="px-3 py-2 border-b border-zinc-800/50">
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                {request.description}
+              </p>
+            </div>
           )}
 
-          {/* Meta info */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <Badge variant="secondary">
-              {request.projects?.name || 'Sin proyecto'}
-            </Badge>
-            {request.clients?.name && (
-              <Badge variant="outline" className="text-zinc-400">
-                {request.clients.name}
-              </Badge>
-            )}
-            {request.tasks_count !== undefined && request.tasks_count > 0 && (
-              <span className="text-zinc-500">
-                {request.tasks_count} tareas
+          {/* Meta */}
+          <div className="px-3 py-2 flex flex-wrap items-center gap-2 border-b border-zinc-800/50">
+            <div className="flex items-center gap-1.5">
+              <Tag size={12} className="text-zinc-500" />
+              <span className="text-sm text-zinc-300">
+                {request.projects?.name || 'Sin proyecto'}
               </span>
-            )}
-            {request.estimated_hours && (
-              <span className="text-zinc-500">
-                {request.estimated_hours}h est.
-              </span>
-            )}
+            </div>
+            <span className="text-zinc-600">•</span>
+            <div className={`flex items-center gap-1.5 ${status.color}`}>
+              {status.icon}
+              <span className="text-sm">{status.label}</span>
+            </div>
           </div>
 
-          {/* Status */}
-          {statusMessages[request.status] && (
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-              {statusMessages[request.status].icon}
-              <span>{statusMessages[request.status].message}</span>
-            </div>
-          )}
-
-          {/* Current task */}
-          {request.current_task && (
-            <div className="text-xs text-orange-400 truncate">
-              {request.current_task}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-1">
-            <Link href={`/admin/requests/${request.id}`} className="flex-1">
+          {/* Action */}
+          <div className="p-3">
+            <Link href={`/admin/requests/${request.id}`}>
               <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-600">
-                <ExternalLink size={12} className="mr-1" />
+                <ExternalLink size={14} className="mr-2" />
                 Ver detalle
               </Button>
             </Link>
@@ -184,41 +161,39 @@ export function RequestCard({ request, priorityColors }: RequestCardProps) {
     )
   }
 
-  // Compact view (default)
+  // COMPACT VIEW (default)
   return (
     <Card
-      className={`bg-zinc-900 border-zinc-800 border-l-4 ${priorityBorder} ${staleBorder} ${activeRing} hover:bg-zinc-800 cursor-pointer transition-all max-h-24 overflow-hidden`}
+      className={`bg-zinc-900 border-zinc-800 border-l-4 ${priorityBorder} ${staleBorder} ${isActive ? 'ring-1 ring-orange-500/30' : ''} hover:bg-zinc-800 cursor-pointer transition-colors`}
       onClick={() => setIsExpanded(true)}
     >
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            {/* Row 1: Number + Time + Stale indicator */}
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span>#{request.request_number}</span>
-              <span>{relativeTime}</span>
-              {staleStatus !== 'normal' && (
-                <AlertTriangle size={10} className={staleStatus === 'critical' ? 'text-red-400' : 'text-yellow-400'} />
-              )}
-            </div>
-
-            {/* Row 2: Title (truncated) */}
-            <div className="font-medium truncate mt-0.5">{request.title}</div>
-
-            {/* Row 3: Project badge + status */}
-            <div className="flex items-center gap-2 mt-1.5">
-              <Badge variant="secondary" className="text-xs truncate max-w-[120px]">
-                {request.projects?.name || 'Sin proyecto'}
-              </Badge>
-              {statusMessages[request.status] && (
-                <div className="flex items-center gap-1 text-xs text-zinc-500">
-                  {statusMessages[request.status].icon}
-                </div>
-              )}
-            </div>
+      <CardContent className="p-0">
+        {/* Header row */}
+        <div className="flex items-center justify-between px-3 pt-3 pb-1">
+          <div className="flex items-center gap-2 text-sm text-zinc-500">
+            <span className="font-mono">#{request.request_number}</span>
+            <span>•</span>
+            <span>{relativeTime}</span>
+            {staleStatus !== 'normal' && (
+              <AlertTriangle size={12} className={staleStatus === 'critical' ? 'text-red-400' : 'text-yellow-400'} />
+            )}
           </div>
+          <ChevronDown size={20} className="text-zinc-500" />
+        </div>
 
-          <ChevronDown size={14} className="text-zinc-500 shrink-0 mt-1" />
+        {/* Title - 2 lines max */}
+        <div className="px-3 py-1">
+          <p className="font-medium text-white leading-snug line-clamp-2">
+            {request.title}
+          </p>
+        </div>
+
+        {/* Project badge */}
+        <div className="px-3 pb-3 pt-1">
+          <Badge variant="secondary" className="text-xs">
+            <Tag size={10} className="mr-1" />
+            {request.projects?.name || 'Sin proyecto'}
+          </Badge>
         </div>
       </CardContent>
     </Card>

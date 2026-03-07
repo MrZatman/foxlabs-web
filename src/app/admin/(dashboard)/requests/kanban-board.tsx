@@ -196,8 +196,8 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
       </div>
 
       {/* Desktop: Full Kanban */}
-      <div className="hidden md:block overflow-x-auto pb-4">
-        <div className="flex gap-4 min-w-max">
+      <div className="hidden md:block overflow-x-auto pb-4 -mx-4 px-4 lg:-mx-6 lg:px-6">
+        <div className="flex gap-3" style={{ width: 'max-content' }}>
           {columns.map((column) => {
             const allItems = requestsByStatus[column.id] || []
             const count = allItems.length
@@ -208,7 +208,7 @@ export function KanbanBoard({ initialRequests, columns, priorityColors }: Props)
             const isWarning = count > 30 && count <= 50
 
             return (
-              <div key={column.id} className="w-72 flex-shrink-0">
+              <div key={column.id} className="w-80 flex-shrink-0">
                 {/* Sticky header */}
                 <div className="sticky top-0 bg-zinc-950 z-10 pb-2">
                   <div className="flex items-center gap-2 py-2">
